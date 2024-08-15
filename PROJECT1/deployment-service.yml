@@ -33,4 +33,5 @@ spec:
     - protocol: "TCP"
       port: 80
       targetPort: 8083
+      nodePort: 30007
   type: NodePort # type of the service.
