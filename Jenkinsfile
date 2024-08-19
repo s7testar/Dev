@@ -5,6 +5,8 @@ pipeline {
        }
     environment {
         SCANNER_HOME = tool name: 'sonar-scanner'
+        DOCKERHUB_CREDENTIALS = credentials('docker-login') //if you want to use token as password to log into docker you need to add 
+        //this  line if you want to use username and password no need
     }
     stages {
         stage('Git Checkout') {
@@ -62,13 +64,13 @@ pipeline {
             steps {
                 script {
                     dir('PROJECT1') {
-                        withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {
+                    // login using username and password :withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {}
+                            sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
                             sh 'docker build -t attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER} -f Dockerfile .'
                         }
                     }
                 }
             }
-        }
         stage('Trivy image Scan') {
             agent {
                 label 'docker'
@@ -85,12 +87,12 @@ pipeline {
             }
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'docker_login', toolName: 'docker') {
-                        sh 'docker push attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
+        //          withDockerRegistry(credentialsId: 'docker_login', toolName: 'docker') {}
+                    sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                    sh 'docker push attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
                     }
                 }
             }
-        }
         stage('k8 deply') {
             agent {
                 label 'docker'
