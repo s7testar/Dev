@@ -62,7 +62,7 @@ pipeline {
             steps {
                 script {
                     dir('PROJECT1') {
-                        withDockerRegistry(credentialsId: 'docker_login', toolName: 'docker') {
+                        withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {
                             sh 'docker build -t attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER} -f Dockerfile .'
                         }
                     }
