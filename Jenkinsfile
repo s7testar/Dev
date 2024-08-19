@@ -1,5 +1,8 @@
 pipeline {
     agent { label 'Dev' }
+     tools {
+       maven 'maven3'                
+       }
     environment {
         SCANNER_HOME = tool name: 'sonar-scanner'
     }
