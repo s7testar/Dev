@@ -1,8 +1,8 @@
 pipeline {
     agent { label 'Dev' }
-    tools {
-        maven 'maven3'                
-    }
+     tools {
+       maven 'maven3'                
+       }
     environment {
         SCANNER_HOME = tool name: 'sonar-scanner'
     }
@@ -50,55 +50,75 @@ pipeline {
                 dir('PROJECT1') {
                     withMaven(globalMavenSettingsConfig: 'settings-maven', maven: 'maven3') {
                         sh 'mvn deploy'
+                //      sh 'mvn clean package'
                     }
                 }
             }
         }
         stage('Docker Build & Tag') {
-            agent { label 'docker' }
-            steps {
-                dir('PROJECT1') {
-                    sh 'docker build -t attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER} -f Dockerfile .'
-                }
+            agent {
+                label 'docker'
             }
-        }
-        stage('Trivy Image Scan') {
-            agent { label 'docker' }
-            steps {
-                sh 'trivy image --format table -o image.html attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
-            }
-        }
-        stage('Docker Push') {
-            agent { label 'docker' }
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {
-                        sh 'docker push attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
+                    dir('PROJECT1') {
+                    // login using username and password :withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {
+                            sh 'docker build -t attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER} -f Dockerfile .'
+                        }
+                      }
                     }
                 }
             }
-        }
-        stage('K8s Deploy') {
-            agent { label 'docker' }
+        stage('Trivy image Scan') {
+            agent {
+                label 'docker'
+            }
+            steps {
+           //     dir('PROJECT1') {
+                sh 'trivy image --format table -o image.html attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
+                }
+            }
+          }
+        stage('Docker Push') {
+            agent {
+                label 'docker'
+            }
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker_login', toolName: 'docker') {
+            
+                    sh 'docker push attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
+                    }
+                  }
+                }
+            }
+        stage('k8 deply') {
+            agent {
+                label 'docker'
+            }
             steps {
                 dir('PROJECT1') {
-                    withKubeConfig(caCertificate: '', clusterName: 'master-node', contextName: '', credentialsId: 'k8token', namespace: 'taskmaster', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
-                        sh "kubectl apply -f deployment-service.yml"
-                        sleep 30 // Consider replacing this with a readiness check
-                    }
+                withKubeConfig(caCertificate: '', clusterName: 'master-node ', contextName: '', credentialsId: 'k8token', namespace: 'taskmaster', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
+                    sh "kubectl apply -f deployment-service.yml"
+                    sleep 30
                 }
-            }
+              }
+           }
         }
-        stage('Verify Deployment') {
-            agent { label 'docker' }
+         stage('Verify deployment') {
+            agent {
+                label 'docker'
+            }
             steps {
-                withKubeConfig(caCertificate: '', clusterName: 'master-node', contextName: '', credentialsId: 'k8token', namespace: 'taskmaster', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
+                
+                withKubeConfig(caCertificate: '', clusterName: 'master-node ', contextName: '', credentialsId: 'k8token', namespace: 'taskmaster', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
                     sh "kubectl get pods -n taskmaster"
                     sh "kubectl get svc -n taskmaster"
                 }
             }
-        }
+         }
     }
+                
 }
 
 
