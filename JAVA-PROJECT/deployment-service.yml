@@ -17,7 +17,7 @@ spec:
           image: attamegnon/dev:maven_v3 # Image that will be used to containers in the cluster
           imagePullPolicy: Always
           ports:
-            - containerPort: 8083 # The port that the container is running on in the cluster
+            - containerPort: 8080 # The port that the container is running on in the cluster
 
 
 ---
@@ -32,6 +32,6 @@ spec:
   ports:
     - protocol: "TCP"
       port: 80
-      targetPort: 8083
+      targetPort: 8080
       nodePort: 30007
   type: NodePort # type of the service.
