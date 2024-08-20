@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: maven
-          image: attamegnon/dev:maven_v3 # Image that will be used to containers in the cluster
+          image: attamegnon/dev:maven_v5 # Image that will be used to containers in the cluster
           imagePullPolicy: Always
           ports:
             - containerPort: 8080 # The port that the container is running on in the cluster
