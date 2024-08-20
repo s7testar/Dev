@@ -43,9 +43,7 @@ pipeline {
             }
         }
         stage('Build Application') {
-            agent {
-                label "docker"
-            }
+            agent { label "docker" }
             steps {
                 dir('PROJECT1') {
                     withMaven(globalMavenSettingsConfig: 'settings-maven', maven: 'maven3') {
@@ -59,8 +57,8 @@ pipeline {
             steps {
                 dir('PROJECT1') {
                     withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {
-                    sh 'docker build -t attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER} -f Dockerfile .'
-                  }
+                        sh 'docker build -t attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER} -f Dockerfile .'
+                    }
                 }
             }
         }
