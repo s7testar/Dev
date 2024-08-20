@@ -56,8 +56,10 @@ pipeline {
             agent { label 'docker' }
             steps {
                 dir('PROJECT1') {
+                script{
                     withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {
                         sh 'docker build -t attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER} -f Dockerfile .'
+                       }
                     }
                 }
             }
