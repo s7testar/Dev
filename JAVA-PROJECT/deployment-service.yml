@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment # Kubernetes resource kind we are creating
 metadata:
-  name: taskmaster-deployment
+  name: maven-deployment
 spec:
   selector:
     matchLabels:
-      app: taskmaster
+      app: maven
   replicas: 2 # Number of replicas that will be created for this deployment
   template:
     metadata:
       labels:
-        app: taskmaster
+        app: maven
     spec:
       containers:
-        - name: taskmaster
-          image: attamegnon/dev:Task-master_v59 # Image that will be used to containers in the cluster
+        - name: maven
+          image: attamegnon/dev:maven_v21 # Image that will be used to containers in the cluster
           imagePullPolicy: Always
           ports:
             - containerPort: 8083 # The port that the container is running on in the cluster
@@ -25,10 +25,10 @@ spec:
 apiVersion: v1 # Kubernetes API version
 kind: Service # Kubernetes resource kind we are creating
 metadata: # Metadata of the resource kind we are creating
-  name: taskmaster-ssvc
+  name: maven-ssvc
 spec:
   selector:
-    app: taskmaster
+    app: maven
   ports:
     - protocol: "TCP"
       port: 80
