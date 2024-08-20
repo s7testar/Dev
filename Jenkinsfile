@@ -65,7 +65,7 @@ pipeline {
             }
         }
         stage('Trivy Image Scan') {
-            agent { label 'docker' }
+            agent { label 'Dev' }
             steps {
                 sh 'trivy image --format table -o image.html attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
             }
