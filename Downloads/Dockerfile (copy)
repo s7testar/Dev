@@ -1,0 +1,180 @@
+# Use Ubuntu 22.04 as the base image
+FROM ubuntu:22.04
+
+# Make sure the package repository is up to date and install necessary packages
+RUN apt-get update && \
+    apt-get install -qy \
+    git \
+    apt-utils \
+    openssh-server \
+    fontconfig \
+    openjdk-17-jre \
+    maven \
+    wget \
+    apt-transport-https \
+    gnupg \
+    lsb-release \
+    docker.io && \
+    # Configure SSH
+    sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd && \
+    mkdir -p /var/run/sshd && \
+    # Cleanup old packages
+    apt-get -qy autoremove && \
+    # Add user jenkins to the image
+    adduser --disabled-password --gecos "" jenkins && \
+    # Set password for the jenkins user
+    echo "jenkins:password" | chpasswd && \
+    mkdir /home/jenkins/.m2 && \
+    # Copy authorized keys if they exist
+    mkdir -p /home/jenkins/.ssh && \
+    touch /home/jenkins/.ssh/authorized_keys && \
+    chown -R jenkins:jenkins /home/jenkins && \
+    chmod 700 /home/jenkins/.ssh && \
+    chmod 600 /home/jenkins/.ssh/authorized_keys && \
+    # Add Trivy GPG key
+    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - && \
+    # Add Trivy repository to sources list
+    echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/trivy.list && \
+    # Update package list
+    apt-get update && \
+    # Install Trivy
+    apt-get install -y trivy && \
+    # Cleanup apt cache
+    apt-get clean
+
+# Install Docker
+RUN curl -fsSL https://get.docker.com | sh
+
+# Start Docker and run SonarQube in the background
+RUN service docker start && \
+    docker pull sonarqube:community && \
+    docker run -d --name sonarqube -p 9000:9000 sonarqube:community
+
+# Expose necessary ports
+EXPOSE 22 9000
+
+# Start SSH service
+CMD ["/usr/sbin/sshd", "-D"]
+
+
+
+# was working earlier
+# Use Ubuntu 22.04 as the base image
+FROM ubuntu:22.04
+
+# Make sure the package repository is up to date and install necessary packages
+RUN apt-get update && \
+    apt-get install -qy \
+    git \
+    apt-utils \
+    openssh-server \
+    fontconfig \
+    openjdk-17-jre \
+    maven \
+    wget \
+    apt-transport-https \
+    gnupg \
+    unzip \
+    curl \
+    lsb-release
+
+# Configure SSH
+RUN sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd && \
+    mkdir -p /var/run/sshd
+
+# Add user jenkins to the image
+RUN adduser --disabled-password --gecos "" jenkins && \
+    echo "jenkins:password" | chpasswd && \
+    mkdir /home/jenkins/.m2 && \
+    mkdir -p /home/jenkins/.ssh && \
+    touch /home/jenkins/.ssh/authorized_keys && \
+    chown -R jenkins:jenkins /home/jenkins && \
+    chmod 700 /home/jenkins/.ssh && \
+    chmod 600 /home/jenkins/.ssh/authorized_keys
+
+# Add Trivy GPG key and repository, then install Trivy
+RUN wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - && \
+    echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/trivy.list && \
+    apt-get update && \
+    apt-get install -y trivy && \
+    apt-get clean
+    
+# Install docker     
+RUN su - jenkins && \
+    curl -fsSL https://get.docker.com/rootless -o get-docker-rootless.sh && \
+    sh get-docker-rootless.sh && \
+    export PATH=$HOME/bin:$PATH  && \
+    export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock && \
+    source ~/.bashrc && \
+    dockerd-rootless.sh --experimental & 
+
+         
+# Expose necessary ports
+EXPOSE 22 
+
+# Start SSH service
+CMD ["/usr/sbin/sshd", "-D"]
+
+
+
+
+
+
+
+
+
+
+# Use Ubuntu 22.04 as the base image
+FROM ubuntu:22.04
+
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    openssh-server \
+    sudo \
+    git  \
+    apt-utils \
+    fontconfig \
+    openjdk-17-jre \
+    maven \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Docker
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure SSH
+RUN mkdir -p /run/sshd && \
+    echo 'root:root' | chpasswd && \
+    sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd && \
+    echo "PermitRootLogin yes" >> /etc/ssh/sshd_config && \
+    echo "UsePAM yes" >> /etc/ssh/sshd_config
+
+# Create a user 'jenkins' with password 'jenkins' and add to 'docker' group
+RUN useradd -m -s /bin/bash jenkins && echo "jenkins:password" | chpasswd && usermod -aG docker jenkins
+
+# Add Trivy GPG key and repository, then install Trivy
+RUN wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - && \
+    echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/trivy.list && \
+    apt-get update && \
+    apt-get install -y trivy && \
+    apt-get clean && \
+    sudo systemctl start docker && \
+    sudo systemctl status docker
+
+# Expose SSH port
+EXPOSE 22
+
+# Start SSH and Docker services
+CMD ["/usr/sbin/sshd", "-D"]
+
+
+

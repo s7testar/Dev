@@ -1,0 +1,57 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # Specify the base box
+  config.vm.box = "generic-x64/ubuntu2204"
+  # Optional: specify the exact version of the box
+  config.vm.box_version = ">= 0"
+  # Create a synced folder
+  config.vm.synced_folder "/home/devops/Downloads", "/home/vagrant/Downloads"
+
+  # Provider-specific configuration
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "2144"
+    vb.cpus = "4"
+  end
+
+  # Master VM configuration
+  config.vm.define "Master" do |master|
+    master.vm.hostname = "Master"
+    master.vm.network "private_network", ip: "192.168.56.11"
+    #master.vm.network "private_network", type: "dhcp"
+    #master.vm.provision "shell", path: "provisionrm.sh"
+  end
+
+  # Jenkins-slave dv VM configuration
+  config.vm.define "Dev" do |dev|
+    dev.vm.hostname = "Dev"
+    dev.vm.network "private_network", ip: "192.168.56.12"
+    #jenkins_slave.vm.network "private_network", type: "dhcp"
+    #jenkins_slave1.vm.provision "shell", path: "provision2.sh"
+  end
+  
+  # Jenkins-slave dv VM configuration
+  config.vm.define "Prod" do |prod|
+    prod.vm.hostname = "Prod"
+    prod.vm.network "private_network", ip: "192.168.56.13"
+    #jenkins_slave.vm.network "private_network", type: "dhcp"
+    #jenkins_slave2.vm.provision "shell", path: "provision3.sh"
+  end
+  
+  # Jenkins-slave dv VM configuration
+  config.vm.define "Nexus" do |nexus|
+    nexus.vm.hostname = "Nexus"
+    nexus.vm.network "private_network", ip: "192.168.56.14"
+    #jenkins_slave.vm.network "private_network", type: "dhcp"
+    #jenkins_slave2.vm.provision "shell", path: "provision3.sh"
+  end
+
+  # Common provisioning for all VMs
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get install -y avahi-daemon libnss-mdns
+    sudo apt-get install -y net-tools
+  SHELL
+end
+
+
