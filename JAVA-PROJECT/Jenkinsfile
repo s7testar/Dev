@@ -37,7 +37,7 @@ pipeline {
             steps {
                 dir('JAVA-PROJECT') {
                     withSonarQubeEnv('sonar') {
-                        sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=taskmaster -Dsonar.projectName=taskmaster -Dsonar.java.binaries=target -Dsonar.host.url=http://192.168.56.11:9000'''
+                        sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=maven -Dsonar.projectName=mavne -Dsonar.java.binaries=target -Dsonar.host.url=http://192.168.56.11:9000'''
                     }
                 }
             }
@@ -85,9 +85,6 @@ pipeline {
             steps {
                 dir('JAVA-PROJECT') {
                     withKubeConfig(caCertificate: '', clusterName: 'master-node', contextName: '', credentialsId: 'k8token', namespace: 'maven', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
-                        sh "kubectl apply -f roles.yml"
-                        sh "kubectl apply -f service.account.yml"
-                        sh "kubectl apply -f bindservicerole.yml"
                         sh "kubectl apply -f deployment-service.yml"
                         sleep 30 // Consider replacing this with a readiness check
                     }
@@ -98,7 +95,7 @@ pipeline {
             agent { label 'docker' }
             steps {
                 withKubeConfig(caCertificate: '', clusterName: 'master-node', contextName: '', credentialsId: 'k8token', namespace: 'maven', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
-                    sh "kubectl get pods -n mavne"
+                    sh "kubectl get pods -n maven"
                     sh "kubectl get svc -n maven"
                 }
             }
