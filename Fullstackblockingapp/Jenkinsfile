@@ -1,29 +1,109 @@
-pipeline { 
-    agent any
-    
+pipeline {
+    agent { label 'Dev' }
     tools {
-        maven 'maven3'
-        jdk 'jdk17'
+        maven 'maven3'  
+        jdk 'jdk17'              
     }
-
+    environment {
+        SCANNER_HOME = tool name: 'sonar-scanner'
+    }
     stages {
-        
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/s7testar/Dev.git'
+            }
+        }
         stage('Compile') {
             steps {
-            sh  "mvn compile"
+                dir('Fullstackblockingapp') {
+                    sh 'mvn compile'
+                }
             }
         }
-        
-        stage('Test') {
+        stage('Unit Test') {
             steps {
-                sh "mvn test"
+                dir('Fullstackblockingapp') {
+                    sh 'mvn test'
+                }
             }
         }
-        
-        stage('Package') {
+        stage('Trivy FS Scan') {
             steps {
-                sh "mvn package"
+                dir('Fullstackblockingapp') {
+                    sh 'trivy fs --format table -o fs.html .'
+                }
+            }
+        }
+        stage('Sonar Analysis') {
+            steps {
+                dir('Fullstackblockingapp') {
+                    withSonarQubeEnv('sonar') {
+                        sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=Logging-app -Dsonar.projectName=Logging-all -Dsonar.java.binaries=target -Dsonar.host.url=http://192.168.56.11:9000'''
+                    }
+                }
+            }
+        }
+        stage('Build Application') {
+            agent { label "docker" }
+            steps {
+                dir('Fullstackblockingapp') {
+                    withMaven(globalMavenSettingsConfig: 'settings-maven', maven: 'maven3') {
+                        sh 'mvn deploy'
+                    }
+                }
+            }
+        }
+        stage('Docker Build & Tag') {
+            agent { label 'docker' }
+            steps {
+                dir('JAVA-PROJECT') {
+                script{
+                    withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {
+                        sh 'docker build -t attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER} -f Dockerfile .'
+                       }
+                    }
+                }
+            }
+        }
+        stage('Trivy Image Scan') {
+            agent { label 'docker' }
+            steps {
+                sh 'trivy image --format table -o image.html attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
+            }
+        }
+        stage('Docker Push') {
+            agent { label 'docker' }
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-login', toolName: 'docker') {
+                        sh 'docker push attamegnon/dev:${JOB_NAME}_v${BUILD_NUMBER}'
+                    }
+                }
+            }
+        }
+        stage('K8s Deploy') {
+            agent { label 'docker' }
+            steps {
+                dir('JAVA-PROJECT') {
+                    withKubeConfig(caCertificate: '', clusterName: 'master-node', contextName: '', credentialsId: 'k8token', namespace: 'maven', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
+                        sh "kubectl apply -f deployment-service.yml"
+                        sleep 30 // Consider replacing this with a readiness check
+                    }
+                }
+            }
+        }
+        stage('Verify Deployment') {
+            agent { label 'docker' }
+            steps {
+                withKubeConfig(caCertificate: '', clusterName: 'master-node', contextName: '', credentialsId: 'k8token', namespace: 'maven', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
+                    sh "kubectl get pods -n maven"
+                    sh "kubectl get svc -n maven"
+                }
             }
         }
     }
 }
+
+
+
+
