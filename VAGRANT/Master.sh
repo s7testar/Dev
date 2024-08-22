@@ -244,6 +244,8 @@ vagrant ssh Master -c "kubectl apply -f bindservicerole.yml"
 vagrant shh Master -c "kubectl apply -f secret.yml" 
 vagrant ssh Master -c "kubectl describe secret mysecret -n maven"
 
+#kubectl create secret docker-registry regcred --docker-server=https:index.docker.io/v1/ --docker-username=      --docker-password=    --namespace=
+
 
 
 
