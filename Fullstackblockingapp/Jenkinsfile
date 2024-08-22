@@ -84,7 +84,7 @@ pipeline {
         stage('K8s Deploy') {
             agent { label 'docker' }
             steps {
-                dir('JAVA-PROJECT') {
+                dir('Fullstackblockingapp') {
                     withKubeConfig(caCertificate: '', clusterName: 'master-node', contextName: '', credentialsId: 'projectstack', namespace: 'stack', restrictKubeConfigAccess: false, serverUrl: 'https://192.168.56.11:6443') {
                         sh "kubectl apply -f deployment-service.yml"
                         sleep 30 // Consider replacing this with a readiness check
