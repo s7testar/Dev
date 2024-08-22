@@ -47,7 +47,7 @@ pipeline {
             agent { label "docker" }
             steps {
                 dir('Fullstackblockingapp') {
-                    withMaven(globalMavenSettingsConfig: 'maven-settings', maven: 'maven3', jdk: 'jdk17', mavenSettingsConfig:'',traceability:true) {
+                    withMaven(globalMavenSettingsConfig: 'settings-maven', maven: 'maven3', jdk: 'jdk17', mavenSettingsConfig:'',traceability:true) {
                         sh 'mvn deploy'
                     }
                 }
