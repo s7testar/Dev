@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: bloggingapp
-          image: attamegnon/prod:stack_v3 # Updated image to private DockerHub image
+          image: attamegnon/prod:stack_v4 # Updated image to private DockerHub image
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
