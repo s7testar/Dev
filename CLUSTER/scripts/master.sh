@@ -51,3 +51,6 @@ EOF
 
 kubectl apply -f https://raw.githubusercontent.com/techiescamp/kubeadm-scripts/main/manifests/metrics-server.yaml
 
+# Tint control plate 
+#kubectl taint nodes $NODENAME node-role.kubernetes.io/control-plane:NoSchedule
+

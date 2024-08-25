@@ -20,3 +20,5 @@ vagrant ssh -c "/vagrant/scripts/dashboard.sh" controlplane
 #to destroy
 #vagrant destroy -f
 
+
+
